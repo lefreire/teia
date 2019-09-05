@@ -5,20 +5,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 # Import PySwarms
 import pyswarms as ps
-# from pyswarms.utils.functions import single_obj as fx
 from pyswarms.utils.plotters import (plot_cost_history, plot_contour, 
                                      plot_surface)
-# from pyswarms.utils.plotters.formatters import Mesher
-# from pyswarms.utils.plotters.formatters import Designer
+
 
 class PSO:
 
-    def __init__(self, path='../data/pokemon.csv', label_name='target', mtype='xgboost'):
+    def __init__(self, path='../data/pokemon.csv', label_name='target'):
         self.pre_processing = PreProcessing(path)
         self.data = self.pre_processing.load_dataset()
-        self.x, self.y = self.pre_processing.separate_data(self.data, label_name)
+        self.X_train, self.X_test, self.ytrain, self.ytest = self.pre_processing.split_train_test(self.data, label_name)
         self.label_name = label_name
         self.optimizer = None
+        self.mtype = None
+
+    def define_type(self, mtype):
         self.mtype = mtype
 
     def convert_particle(self, x):
@@ -29,9 +30,8 @@ class PSO:
         return x
 
     def define_columns(self, x):
-        new_data = self.pre_processing.copy_columns(x, self.label_name)
-        X_train, X_test, y_train, y_test = self.pre_processing.split_train_test(new_data, self.label_name)
-        return X_train, X_test, y_train, y_test
+        X_train, X_test =  self.pre_processing.copy_columns(x, self.label_name, self.X_train, self.X_test)
+        return X_train, X_test
 
     def model_accuracy(self, x):
         res = []
@@ -48,10 +48,8 @@ class PSO:
         res = []
         n_particles = x.shape[0]
         for particle in range(0, n_particles):
-            # X_train, X_test, y_train, y_test = self.define_columns(x[particle])
-            xgbmodel = XGBoostModel(self.x, self.y)
-            # xgbmodel.xg_model()
-            # y_pred = xgbmodel.predict_model()
+            X_train, X_test = self.define_columns(x[particle])
+            xgbmodel = XGBoostModel(X_train, self.ytrain, X_test,  self.ytest)
             res.append(-xgbmodel.kfold_accuracy())
         return np.array(res)
 
@@ -60,10 +58,8 @@ class PSO:
         res = []
         n_particles = x.shape[0]
         for particle in range(0, n_particles):
-            # X_train, X_test, y_train, y_test = self.define_columns(x[particle])
-            svmmodel = SVMModel(self.x, self.y)
-            # svmmodel.svm_model()
-            # y_pred = svmmodel.predict_model()
+            X_train, X_test = self.define_columns(x[particle])
+            svmmodel = SVMModel(X_train, self.ytrain, X_test,  self.ytest)
             res.append(-svmmodel.kfold_accuracy())
         return np.array(res)
 
@@ -72,10 +68,8 @@ class PSO:
         res = []
         n_particles = x.shape[0]
         for particle in range(0, n_particles):
-            # X_train, X_test, y_train, y_test = self.define_columns(x[particle])
-            treemodel = DecisionTreeModel(self.x, self.y)
-            # treemodel.tree_model()
-            # y_pred = treemodel.predict_model()
+            X_train, X_test = self.define_columns(x[particle])
+            treemodel = DecisionTreeModel(X_train, self.ytrain, X_test,  self.ytest)
             res.append(-treemodel.kfold_accuracy())
         return np.array(res)
 

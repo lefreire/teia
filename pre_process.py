@@ -61,13 +61,12 @@ class PreProcessing:
 
     def split_train_test(self, data, label_name='target'):
         X_data, y = self.separate_data(data, label_name)
-        seed = 7
         test_size = 0.3
         X_train, X_test, y_train, y_test = train_test_split(X_data, y, 
-            test_size=test_size, random_state=seed)
+            test_size=test_size)
         return X_train, X_test, y_train, y_test 
 
-    def copy_columns(self, columns, label_name):
+    def copy_columns(self, columns, label_name, X_train, X_test):
         #columns = vetor of 0 and 1, indicating if a column will be part of the dataset
         data_columns = self.data.columns.tolist()
         selected_columns = []
@@ -75,6 +74,5 @@ class PreProcessing:
             if columns[column]: selected_columns.append(data_columns[column])
         if len(selected_columns) == 0: 
             selected_columns.append(data_columns[0])
-        if label_name not in selected_columns: selected_columns.append(label_name)
-        # print(selected_columns)
-        return self.data[selected_columns]
+        if label_name in selected_columns: selected_columns.remove(label_name)
+        return X_train[selected_columns], X_test[selected_columns]
